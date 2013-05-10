@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wi-Fun-Gi</string>
+    <string name="radio_label">SETTINGS</string>
+    <string name="network_label">Network status:</string>    
+    <string name="sensors_label">SENSORS</string>
+    <string name="light_label">[Pin 44] Light:</string>
+    <string name="debugging_label">DEBUGGING</string>
+    <string name="misc_label">Misc:</string>
+</resources>
