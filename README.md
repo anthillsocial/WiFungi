@@ -1,7 +1,7 @@
 Wi-Fungi
 =======
 
-Android app (with supporting PHP) that transmits and receive sensor and audio data between mobile devices.
+Android app (with supporting PHP) that transmits and receives sensor and audio data between mobile devices.
 
     **Permissions**
     This file is part of the "Wi-Fungi" project.
