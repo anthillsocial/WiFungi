@@ -4,9 +4,10 @@
     <string name="status_label">STATUS</string>
     <string name="transreciever_label">This phone is a:</string>
     <string name="network_label">Network status:</string>
-    <string name="recording_label">Audio recording:</string>    
-    <string name="sensors_label">IOIO SENSORS</string>
-    <string name="light_label">[44] Light:</string>
-    <string name="misc_label">[46] PWM Output:</string>
+    <string name="recording_label">Audio recording:</string> 
+    <string name="playback_label">Audio playback:</string>    
+    <string name="sensors_label">SENSORS</string>
+    <string name="light_label">[44] IOIO Light:</string>
+    <string name="misc_label">[46] IOIO PWM Output:</string>
     <string name="debugging_label">DEBUGGING</string>
 </resources>

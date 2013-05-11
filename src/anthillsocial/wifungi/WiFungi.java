@@ -1,6 +1,12 @@
 package anthillsocial.wifungi;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -14,6 +20,8 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import anthillsocial.wifungi.R;
 import ioio.lib.api.AnalogInput;
@@ -38,7 +46,7 @@ import android.media.MediaRecorder;
 
 public class WiFungi extends IOIOActivity {
 	/***************************************************** 
-	* SET VARIABLES
+	* SETUP VARIABLES
 	*****************************************************/
 	// Manage all the tasks
 	private Handler taskHandler;
@@ -51,11 +59,12 @@ public class WiFungi extends IOIOActivity {
 	private TextView network_;
 	private TextView recording_txt_;
 	private TextView transreciever_txt_;
+	private TextView playback_txt_;
 	private SeekBar seekBar_;
 	private ToggleButton toggleButton_;
 	
 	// Audio vars
-	private MediaPlayer track1_;
+	private AudioPlayer lastRecorded;
 	private AudioRecorder recordObj;
 	
 	// Http vars
@@ -63,7 +72,7 @@ public class WiFungi extends IOIOActivity {
 	AsyncHttpTask postObj;
 	
 	/***************************************************** 
-	* WHEN THE ACTIVITY HAS STARTED
+	* START THE: UI, AUDIO, HTTP
 	*****************************************************/
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -76,18 +85,16 @@ public class WiFungi extends IOIOActivity {
 		network_ = (TextView) findViewById(R.id.Network);
 		recording_txt_ = (TextView) findViewById(R.id.RecordingTxt);
 		transreciever_txt_ = (TextView) findViewById(R.id.TransRecieverTxt);
+		playback_txt_ = (TextView) findViewById(R.id.PlaybackTxt);
 		seekBar_ = (SeekBar) findViewById(R.id.SeekBar);
 		toggleButton_ = (ToggleButton) findViewById(R.id.ToggleButton);
 		enableUi(false);
-		
+
 		// Setup audio playback
-		//track1_ = MediaPlayer.create(getApplicationContext(), R.raw.track1);
-		//track1_.start();
+		lastRecorded = new AudioPlayer(getApplicationContext());
 		
-		// Setup audio recorder, files
-		String dir = "WiFungi";
-		recordObj = new AudioRecorder(dir);
-		//recordObj.start();
+		// Setup audio recorder
+		recordObj = new AudioRecorder();
 		
 		// Start grabbing remote json		
 		postObj = new AsyncHttpTask();
@@ -95,32 +102,60 @@ public class WiFungi extends IOIOActivity {
 		
 		//Now manage: Playback, Recording, httpPOST and httpGET
 		taskManager();
+		
 	}
 	
 	/***************************************************** 
-	* TASK MANAGER: Check status of: Audio, IOIO, HTTP
+	* TASK MANAGER: Manage: Audio, IOIO, HTTP
 	******************************************************/
 	private void taskManager(){
-		int start_in = 0;     // milliseconds until starting the timer
-		int interval = 250;  // millisecond interval between calling the method
+		int start_in = 0;     // Milliseconds until starting the timer
+		int interval = 250;   // Millisecond interval between calling the method
 		Timer t = new Timer();
+		
 		t.scheduleAtFixedRate(new TimerTask() {
-			private int i;
+			// Which file do we record the micInput to
+			String recordFile = "WiFungi/MicInput.mp4";
+			int recordlen = 0;
+			int i;
+			boolean recording = false;
+			boolean playback = false;
+			
 		    @Override
 		    public void run() {
-		        //Called each time when 1000 milliseconds (1 second) (the period parameter)
-		    	String msg = "On UI";
-				setText("recording_label", msg+String.valueOf(i));
+		    	
+		    	// Manage mic recording and playback
+		    	if(recording==false && playback == false){
+		    		recordObj.start(recordFile);
+		    		recording = true;
+		    	}
+		    	recordlen = recordObj.recordinglen();
+		    	if(recordlen>=10){
+		    		recordObj.stop();
+		    		recording = false;
+		    	}	
+		    	if(recording==false && playback==false){
+		    		playback = true;
+		    		lastRecorded.play(recordFile, false);
+		    	}
+		    	if(lastRecorded.status()=="Ready" && playback==true){
+		    		playback = false;
+				}
+		    	
+		    	// Set UI output
+				setText("recording_label", recordObj.status()+" ("+String.valueOf(recordlen)+" secs)");
 				setText("transreciever_label", ioiostatus_);
 				setText("network_label", poststatus_);
+				setText("playback_label", lastRecorded.status()+" | "+i);
 				i++;
 		    }         
 		},start_in, interval);
 	}
 	
 	/***************************************************** 
-	* ASYNC SOUND RECORDING
-	******************************************************/
+	* MANAGE MULTI-TRACK AUDIO
+	******************************************************/	
+	
 	
 	/***************************************************** 
 	* MANAGE ASYNC HTTP CONNECTIONS
@@ -128,6 +163,7 @@ public class WiFungi extends IOIOActivity {
 	* Upload with progress bar: 
 	* http://toolongdidntread.com/android/android-multipart-post-with-progress-bar/
 	******************************************************/	
+	/* POST DATA */
 	private class AsyncHttpTask extends AsyncTask<String, Integer, Double>{
 		 
 		@Override
@@ -166,6 +202,36 @@ public class WiFungi extends IOIOActivity {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 			}
+		}
+	}
+	
+	/* GRAB JSON FROM URL */
+	public class JsonReader {
+		private String readAll(Reader rd) throws IOException {
+		    StringBuilder sb = new StringBuilder();
+		    int cp;
+		    while ((cp = rd.read()) != -1) {
+		      sb.append((char) cp);
+		    }
+		    return sb.toString();
+		}
+
+		public JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
+		    InputStream is = new URL(url).openStream();
+		    try {
+		      BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
+		      String jsonText = readAll(rd);
+		      JSONObject json = new JSONObject(jsonText);
+		      return json;
+		    } finally {
+		      is.close();
+		    }
+		}
+
+		public void main(String[] args) throws IOException, JSONException {
+		    JSONObject json = readJsonFromUrl("https://graph.facebook.com/19292868552");
+		    System.out.println(json.toString());
+		    System.out.println(json.get("id"));
 		}
 	}
 	
@@ -220,21 +286,6 @@ public class WiFungi extends IOIOActivity {
 	}
 	
 	/***************************************************** 
-	* MANAGE AUDIO PLAYBACK
-	******************************************************/
-	public void onPrepared(MediaPlayer player) {
-		track1_.start();
-	}
-	   
-	public void stop(){
-	    if(track1_.isPlaying()) track1_.stop();
-	}
-	
-	public void pause(){
-	    if(track1_.isPlaying()) track1_.pause();
-	}
-
-	/***************************************************** 
 	* UI COMMUNICATIONS
 	******************************************************/
 	// Make connection to UI elements
@@ -244,8 +295,6 @@ public class WiFungi extends IOIOActivity {
 			public void run() {
 				seekBar_.setEnabled(enable);
 				toggleButton_.setEnabled(enable);
-				//String msg = recordObj.status();
-				//
 			}
 		});
 	}
@@ -260,6 +309,7 @@ public class WiFungi extends IOIOActivity {
 				if(which_txt=="network_label") network_.setText(str);
 				if(which_txt=="recording_label") recording_txt_.setText(str);
 				if(which_txt=="transreciever_label") transreciever_txt_.setText(str);
+				if(which_txt=="playback_label") playback_txt_.setText(str);
 			}
 		});
 	}
