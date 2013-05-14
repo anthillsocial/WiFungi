@@ -3,7 +3,9 @@
     <string name="app_name">Wi-Fun-Gi</string>
     <string name="status_label">STATUS</string>
     <string name="transreciever_label">This phone is a:</string>
-    <string name="network_label">Network status:</string>
+    <string name="networkget_label">Network GET:</string>
+    <string name="networkpost_label">Network POST:</string>
+    <string name="networkaudio_label">New Audio:</string>   
     <string name="recording_label">Audio recording:</string> 
     <string name="playback_label">Audio playback:</string>    
     <string name="sensors_label">SENSORS</string>

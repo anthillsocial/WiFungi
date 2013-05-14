@@ -18,16 +18,6 @@ public class AudioRecorder {
   private int startedrecording = 0;
   private String audioformat;
 
-  /**
-   * Creates a new audio recording at the given path (relative to root of SD card).
-   */
-  //public AudioRecorder(String path) {
-    //this.path = sanitizePath(path);
-  //}
-
-  private int currenttime(){
-	  return  (int) (System.currentTimeMillis() / 1000L);
-  }
   
   private String sanitizePath(String path) {
     if (!path.startsWith("/")) path = "/" + path;
@@ -124,6 +114,10 @@ public class AudioRecorder {
 	  }else{
 		  return 0;
 	  }
+  }
+
+  private int currenttime(){
+	  return  (int) (System.currentTimeMillis() / 1000L);
   }
 }
 

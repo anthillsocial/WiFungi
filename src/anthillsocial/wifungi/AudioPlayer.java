@@ -24,6 +24,7 @@ public class AudioPlayer {
 	private String status = "Ready";
 	private String currentpath;
 	private boolean islooped;
+	private int started = 0;
 	
 	public AudioPlayer(Context applicationContext) {
 		context = applicationContext;
@@ -73,14 +74,12 @@ public class AudioPlayer {
 		audiofile.setOnPreparedListener(new OnPreparedListener() {
 			@Override
 			public void onPrepared(MediaPlayer arg0) {
+				started = currenttime();
 				audiofile.start();
 				Log.d(TAG, "Audo setOnCompletionListener() stop");
 			}
 		});	
 		audiofile.prepareAsync();
-		
-		//audiofile.prepare();
-		//audiofile.start();
 	}
 
 	public String status() {
@@ -100,5 +99,17 @@ public class AudioPlayer {
 	public void pause(){
 		status = "Paused";
 	    if(audiofile.isPlaying()) audiofile.pause();
+	}
+	
+	public int elapsed(){
+		  if(status == "Playing"){
+			  return currenttime()-started;
+		  }else{
+			  return 0;
+		  }
+	}
+	
+	private int currenttime(){
+		 return  (int) (System.currentTimeMillis() / 1000L);
 	}
 }
